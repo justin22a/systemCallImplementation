@@ -1,0 +1,44 @@
+.TH P1
+.SH NAME
+Project 1 System Call Implementation and Testing
+.SH SYNOPSIS
+.SS
+    1. Mkdir process_log
+.SS
+    2. Cd /usr/rep/src/reptilian-kernel
+.SS
+    3. Nano kernel/sys.c
+.SS
+    4. Nano include/linux/syscalls.h
+.SS
+    5. Nano arch/x86/entry/syscalls/syscall_64.tbl
+.SS
+    6. Example syscall implementation: SYSCALL_DEFINE1(system_call_name , int , param)
+.SS
+    7. Example syscall header: asmlinkage int sys_system_call_name(int param)
+.SS
+    8. Example syscall table entry: number      common       name         __x64_name
+.SS
+    9. Make && sudo make install && sudo make modules_install
+.SS
+    10. Cd ~
+.SS
+    11. g++ -std=c++17 -o file_name file_name.cpp -L./process_log -lprocess_log
+.SS
+    12. gcc -o file_name file_name.c -L./process_log -lprocess_log
+.SS
+    13. ./filename
+.SS
+    14. printk()
+.SS
+    15. gcc -c libprocess_log.c -o libprocess_log.o
+.SS
+    16. ar rcs libprocess_log.a libprocess_log.o
+.SH DESCRIPTION
+Command 1 makes a directory for the testing sake of the project. Command 2 moves the current working directory to the kernel of the virtual machine we are working with in project 1. Next, editing the file located in kernel/sys.c using nano is where the system call can be implemented in the language C. The way to define a system call in this file is through using an example like this SYSCALL_DEFINE1(system_call_name , int , param). If the user desires to log a message through a system call to the dmesg, printk() can be used to log it. This syntax allows for the definition of a new system call, where the number “1” in the macro of this syntax defines how many parameters the system call will take in. However, there is also the name of the system call which will be defined in a syscall table. To add a header for the implementation located in kernel/sys.c, where editing is done through command 3. Then, the syntax will include asmlinkage which is special to the compilation of a system call, followed by a normal C defined header with the name of the syscall before the parenthesis (sys_system_call_name(int param)). Next, to define the system call in the OS there needs to be a table entry with syntax. To edit that table there will need to be three table entries like the example table entry in the synopsis (there will need to be 3 system calls for getting, setting, and logging messages). After finalizing system call implementations, the command line starting with make in the synopsis (along with restarting the vm) will need to happen to recompile the kernel. Next, to compile tests against the library commands 11 and 12 will be used (g++ for c++ and gcc for C). That followed by typing ./filename in the parent directory to process_log will test the library.
+.SH BUGS
+If the vm restarts when testing, the system call is the root issue that could deal with parameters being entered wrongly. Specifically, the system call dealing with invoking the message should have parameter order (char* message, int level). Another bug is “undefined reference” which can likely result in the testing files not being able to access library functions.
+.SH OPTIONS
+Number 6 in the description should have C code defining the system call, implementations may vary.
+.SH YOUTUBE LINK
+https://youtu.be/Hlqva4l-Vjs

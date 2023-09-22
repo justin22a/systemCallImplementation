@@ -1,0 +1,151 @@
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index bbfc6d440870..d44975272a9c 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -345,6 +345,9 @@
+ 334	common	rseq			__x64_sys_rseq
+ 424	common	pidfd_send_signal	__x64_sys_pidfd_send_signal
+ 434	common	pidfd_open		__x64_sys_pidfd_open
++435	common  justin_adam             __x64_sys_justin_adam
++436	common  set_proc_level          __x64_sys_set_proc_level
++437	common  get_proc_level          __x64_sys_get_proc_level
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 8e5b2c6d5dea..0052684f39f4 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -764,7 +764,9 @@ asmlinkage long sys_request_key(const char __user *_type,
+ 				key_serial_t destringid);
+ asmlinkage long sys_keyctl(int cmd, unsigned long arg2, unsigned long arg3,
+ 			   unsigned long arg4, unsigned long arg5);
+-
++asmlinkage int sys_justin_adam(char* message,int level);
++asmlinkage int sys_get_proc_level();
++asmlinkage int sys_set_proc_level(int param);
+ /* arch/example/kernel/sys_example.c */
+ #ifdef CONFIG_CLONE_BACKWARDS
+ asmlinkage long sys_clone(unsigned long, unsigned long, int __user *, unsigned long,
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 0a1cdee858de..d03203b3ae93 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -4,7 +4,7 @@
+  *
+  *  Copyright (C) 1991, 1992  Linus Torvalds
+  */
+-
++#include <uapi/linux/string.h>
+ #include <linux/export.h>
+ #include <linux/mm.h>
+ #include <linux/utsname.h>
+@@ -135,6 +135,108 @@
+  * architectures that now have 32-bit UID/GID but didn't in the past
+  */
+ 
++
++int proc_level = 0;
++EXPORT_SYMBOL(proc_level);
++
++SYSCALL_DEFINE2(justin_adam, char* , message, int , level)
++{
++
++
++if(level < 0 || level > 7)
++{
++return -1;
++}
++
++if(level > proc_level)
++{
++return -1;
++}
++int len = strlen(message);
++
++if(len > 128)
++{
++return -1;
++}
++char* proc;
++if(level == 0)
++{
++char case0[] = "PROC_OVERRIDE";
++proc = case0;
++}
++else if(level == 1)
++{
++char case1[] = "PROC_ALERT";
++proc = case1;
++}
++else if(level == 2)
++{
++char case2[] = "PROC_CRITICAL";
++proc = case2;
++}
++else if(level == 3)
++{
++char case3[] = "PROC_ERROR";
++proc = case3;
++}
++else if(level == 4)
++{
++char case4[] = "PROC_WARNING";
++proc = case4;
++}
++else if(level == 5)
++{
++char case5[] = "PROC_NOTICE";
++proc = case5;
++}
++else if(level == 6)
++{
++char case6[] = "PROC_INFO";
++proc = case6;
++}
++else if(level == 7)
++{
++char case7[] = "PROC_DEBUG";
++proc = case7;
++}
++char* exNameDest = current->comm;
++
++int identity = current->pid;
++char identityHolder[64];
++sprintf(identityHolder, "%d" , identity);
++
++char dest[2048] = "";
++
++strcat(dest , proc);
++strcat(dest , " [");
++strcat(dest , exNameDest);
++strcat(dest , ", ");
++strcat(dest , identityHolder);
++strcat(dest , "]: ");
++strcat(dest , message);
++
++printk(dest);
++
++return level;
++}
++
++SYSCALL_DEFINE0(get_proc_level)
++{
++return proc_level;
++}
++
++SYSCALL_DEFINE1(set_proc_level, int, param)
++{
++if((int)current_cred()->uid.val == 0){
++proc_level=param;
++return param;
++}
++else
++{
++return -1;
++}
++}
++
+ int overflowuid = DEFAULT_OVERFLOWUID;
+ int overflowgid = DEFAULT_OVERFLOWGID;
+ 
